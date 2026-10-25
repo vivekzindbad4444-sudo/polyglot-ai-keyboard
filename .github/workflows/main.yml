@@ -1,0 +1,53 @@
+
+name: Build Polyglot AI Keyboard APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Find and extract Android project ZIP
+        run: |
+          ZIP=$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)
+          if [ -z "$ZIP" ]; then
+            echo "Project ZIP not found in repository root"
+            exit 1
+          fi
+          mkdir project
+          unzip -q "$ZIP" -d project
+          ANDROID_DIR=$(find project -type f -name settings.gradle.kts -print -quit | xargs dirname)
+          if [ -z "$ANDROID_DIR" ] || [ ! -d "$ANDROID_DIR/app" ]; then
+            echo "Android project folder not found"
+            exit 1
+          fi
+          echo "ANDROID_DIR=$ANDROID_DIR" >> "$GITHUB_ENV"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build debug APK
+        run: gradle -p "$ANDROID_DIR" assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Polyglot-AI-Keyboard-APK
+          path: project/**/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          

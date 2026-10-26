@@ -18,8 +18,8 @@ jobs:
         run: |
           ZIP=$(find . -maxdepth 1 -type f -iname '*.zip' -print -quit)
           test -n "$ZIP" || { echo "ZIP not found"; exit 1; }
-          mkdir project
-          unzip -q "$ZIP" -d project
+          mkdir -p project
+          unzip -oq "$ZIP" -d project
           ANDROID_DIR=$(find project -type f -name settings.gradle.kts -print -quit | xargs dirname)
           test -d "$ANDROID_DIR/app" || { echo "Android project not found"; exit 1; }
           echo "ANDROID_DIR=$ANDROID_DIR" >> "$GITHUB_ENV"
